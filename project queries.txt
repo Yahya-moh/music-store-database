@@ -1,0 +1,78 @@
+#query1#
+
+SELECT count(il.invoicelineid) salescount,a.title albumtitle 
+FROM invoiceline il
+JOIN track t
+ON   t.trackid=il.TrackId
+JOIN album a
+ON   a.albumid=t.albumid
+GROUP BY 2
+ORDER BY 1 DESC 
+LIMIT 10;
+
+
+#query 2# 
+SELECT ar.name  artist_name,count(il.invoicelineid),sum(il.unitprice * il.quantity)
+FROM invoiceline il
+JOIN track t
+ON   il.trackid=t.TrackId
+JOIN album a
+ON   a.albumid=t.AlbumId
+JOIN artist ar
+ON   ar.artistid=a.ArtistId
+GROUP BY 1
+ORDER BY 3 DESC
+LIMIT 10;
+
+#query3#
+
+SELECT count(il.invoiceid) total_orders_count,sum(il.unitprice * il.quantity)  total_spent_amount,ar.name artist_name,c.firstname           	 customer_first_name,c.lastname customer_last_name
+FROM invoiceline il
+JOIN invoice i
+ON   i.invoiceid=il.InvoiceId
+JOIN customer c
+ON   c.customerid=i.CustomerId
+JOIN track t
+ON   t.trackid =il.TrackId
+JOIN album a
+ON   a.albumid = t.AlbumId
+JOIN artist ar
+ON   ar.artistid= a.artistid
+GROUP BY 3,4
+HAVING artist_name=(SELECT artist_name
+                    FROM (SELECT ar.name artist_name,count(il.invoicelineid),sum(il.unitprice * il.quantity)
+							FROM invoiceline il
+							JOIN track t
+							ON il.trackid=t.TrackId
+							JOIN album a
+							ON a.albumid=t.AlbumId
+							JOIN artist ar
+							ON ar.artistid=a.ArtistId
+							GROUP BY 1
+							ORDER BY 3 DESC
+							LIMIT 1) AS t1)
+ORDER BY 2 DESC
+LIMIT 5;
+
+
+#query4#
+WITH table2 AS (SELECT count(il.invoicelineid) 	 	 					count,i.billingcountry country,g.name genre_name
+	           FROM invoice i
+			JOIN invoiceline il
+			ON i.invoiceid=il.InvoiceId
+			JOIN track t
+			ON il.trackid=t.TrackId
+			JOIN genre g
+			ON g.genreid=t.genreid
+			GROUP BY 2,3
+				ORDER BY 2),
+table1 as (SELECT  MAX(count) count,COUNTRY,genre_name
+           FROM table2
+		   GROUP BY country)
+SELECT t1.count,t1.country,t2.genre_name
+FROM table1 t1
+left JOIN table2 t2
+ON t1.count=t2.count
+AND t1.country=t2.country
+
+
